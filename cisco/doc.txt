@@ -1,3 +1,0 @@
-Cisco DevNet Sandbox:
-
-https://developer.cisco.com/site/sandbox/

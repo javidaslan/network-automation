@@ -65,15 +65,28 @@ def postToAPI(ip, endpoint, data, token):
     except:
         print(traceback.format_exc())
 
-def getInventory(ip, token):
+def getDeviceInfo(dna_ip, token, devices):
     """
-    Get inventory of DNA Center and save to .json (optional)
+    By specifying endpoint you can get device specific information.
+    Currently following information is available:
+    
+    1. Interfaces
     """
-    inventory = getFromAPI(ip=dna_ip, endpoint='network-device', token=token)
-    # uncomment if you want to save to .json
-    with open('inventory.json', 'w') as f:
-        f.write(json.dumps(inventory['response']))
-    return inventory['response']
+    device_info_list = [] # list of dicts
+    for device in devices:
+        if device['softwareType']:
+            device_info_list.append({
+                'id': device['id'],
+                'hostname': device['hostname'],
+                'managementIpAddress': device['managementIpAddress'],
+                'interfaceDetails': getFromAPI(ip=dna_ip, endpoint=f"interface/network-device/{device['id']}", token=token)
+            }
+        )
+    
+    with open('DeviceInfo.json', 'w') as f:
+        f.write(json.dumps(device_info_list))
+    
+    print('Information from all devices gathered')
 
 def runCommands(ip, endpoint, token, devices, commands):
     """
@@ -88,19 +101,31 @@ def runCommands(ip, endpoint, token, devices, commands):
     )
     return r.json()
 
-dna_ip = input("IP Address of your DNA Center: ")
-username = input("username: ")
-password = getpass()
+
+
+dna_ip = '10.10.20.85' # input("IP Address of your DNA Center: ")
+username = 'admin' # input("username: ")
+password = 'Cisco1234!'  # getpass()
 token = getToken(dna_ip, username, password).get('Token', None)
 if token:
+    # Get site info
+    site_info = getFromAPI(ip=dna_ip, endpoint='site-health', token=token)
+    with open('SiteInfo.json', 'w') as f:
+        f.write(json.dumps(site_info))
+    
     # get inventory list of DNA Center
-    inventory = getInventory(ip=dna_ip, token=token)
-    devices = [device['id'] for device in inventory if device['softwareType']] # take IDs to run commands
+    # inventory = getInventory(ip=dna_ip, token=token)
+    inventory = getFromAPI(ip=dna_ip, endpoint='network-device', token=token)
+    with open('inventory.json', 'w') as f:
+        f.write(json.dumps(inventory['response']))
+    
+    # Get device specific information
+    getDeviceInfo(dna_ip=dna_ip, token=token, devices=inventory['response'])
 
     # get list of accepted read only commands
-    commands = getFromAPI(ip=dna_ip, endpoint='network-device-poller/cli/legit-reads', token=token)
-    
+    # commands = getFromAPI(ip=dna_ip, endpoint='network-device-poller/cli/legit-reads', token=token)
+    # print(commands)
     # run commands on give devices
-    task_id = runCommands(ip=dna_ip, endpoint='network-device-poller/cli/read-request', token=token, devices=devices, commands=["show ver | inc Software, Version", "show clock"])
-    print(task_id)
+    # task_id = runCommands(ip=dna_ip, endpoint='network-device-poller/cli/read-request', token=token, devices=devices, commands=["show ver | inc Software, Version", "show clock"])
+    # print(task_id)
     

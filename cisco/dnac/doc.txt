@@ -1,0 +1,11 @@
+Cisco DevNet Sandbox:
+
+https://developer.cisco.com/site/sandbox/
+
+Tested API Endpoints:
+
+1. network-device
+2. network-device-poller/cli/legit-reads
+3. network-device-poller/cli/read-request
+4. interface/network-device/${device}
+5. site-health
